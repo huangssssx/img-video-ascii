@@ -1,7 +1,7 @@
 function convertToASCII(imageData, columns, rows) {
     const { data, width, height } = imageData;
     let ascii = '';
-    const character = '@';  // 可选择填充字符
+    const character = '@';  // 用于填充的字符
 
     const colStep = width / columns;
     const rowStep = height / rows;
@@ -19,14 +19,18 @@ function convertToASCII(imageData, columns, rows) {
         }
         ascii += '<br/>';
     }
-
     return ascii;
+}
+
+function setupASCIIContainer(container, fontSize, lineHeight) {
+    container.style.fontSize = `${fontSize}px`;
+    container.style.lineHeight = `${lineHeight}px`;
+    container.style.whiteSpace = "pre"; // 保留空格和折行
 }
 
 export function imageToAscii(imageUrl, container) {
     const image = new Image();
-    image.crossOrigin = "anonymous"; // 解决跨域问题
-    image.src = imageUrl;
+    image.crossOrigin = "anonymous";
 
     image.onload = () => {
         const { width, height } = image;
@@ -37,20 +41,54 @@ export function imageToAscii(imageUrl, container) {
         ctx.drawImage(image, 0, 0);
 
         const imageData = ctx.getImageData(0, 0, width, height);
-
-        // 选择合适的字体大小和行高比例实现填充
-        const charCols = width / 8; // 可根据容器大小动态计算
+        const charCols = width / 8;
         const charRows = height / 14;
-
         const ascii = convertToASCII(imageData, charCols, charRows);
 
-        container.style.fontSize = `${width / charCols}px`;
-        container.style.lineHeight = `${height / charRows}px`;
-        container.style.whiteSpace = "pre"; // 保留空格和折行
+        setupASCIIContainer(container, width / charCols, height / charRows);
         container.innerHTML = ascii;
     };
 
+    image.src = imageUrl;
     image.onerror = (event) => {
         console.error("Failed to load image", event);
+    };
+}
+
+function drawVideoFrame(ctx, canvas, video, container, charCols, charRows) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const ascii = convertToASCII(imageData, charCols, charRows);
+    container.innerHTML = ascii;
+
+    requestAnimationFrame(() => drawVideoFrame(ctx, canvas, video, container, charCols, charRows));
+}
+
+export function videoToAscii(videoUrl, container) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const video = document.createElement("video");
+
+    video.crossOrigin = "anonymous";
+    video.src = videoUrl;
+    video.autoplay = true;
+    video.loop = true;
+    video.muted = true;
+    video.play();
+
+    video.oncanplay = () => {
+        const { videoWidth, videoHeight } = video;
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+
+        const charCols = videoWidth / 8;
+        const charRows = videoHeight / 14;
+
+        setupASCIIContainer(container, videoWidth / charCols, videoHeight / charRows);
+        requestAnimationFrame(() => drawVideoFrame(ctx, canvas, video, container, charCols, charRows));
+    };
+
+    video.onerror = (error) => {
+        console.error("Error loading video", error);
     };
 }
