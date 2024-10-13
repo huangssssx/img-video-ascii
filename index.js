@@ -28,11 +28,24 @@ function setupASCIIContainer(container, fontSize, lineHeight) {
     container.style.whiteSpace = "pre"; // 保留空格和折行
 }
 
-export function imageToAscii(imageUrl, container) {
+/**
+ * Converts an image to ASCII art and displays it in a specified container.
+ *
+ * @param {string} imageUrl - The URL of the image to convert.
+ * @param {HTMLElement} container - The HTML element where the ASCII art will be displayed.
+ * @param {Object} [options] - The optional parameters for rendering ASCII art.
+ * @param {number} [options.fontSize=8] - The font size for ASCII characters.
+ * @param {number} [options.lineHeight=14] - The line height for ASCII characters.
+ */
+export function imageToAscii(imageUrl, container, options = {
+    fontSize: 8,
+    lineHeight: 14
+}) {
     const image = new Image();
     image.crossOrigin = "anonymous";
 
     image.onload = () => {
+        const { fontSize, lineHeight } = options || {};
         const { width, height } = image;
         const canvas = document.createElement("canvas");
         canvas.width = width;
@@ -41,11 +54,11 @@ export function imageToAscii(imageUrl, container) {
         ctx.drawImage(image, 0, 0);
 
         const imageData = ctx.getImageData(0, 0, width, height);
-        const charCols = width / 8;
-        const charRows = height / 14;
+        const charCols = width / fontSize;
+        const charRows = height / lineHeight;
         const ascii = convertToASCII(imageData, charCols, charRows);
 
-        setupASCIIContainer(container, width / charCols, height / charRows);
+        setupASCIIContainer(container, fontSize, lineHeight);
         container.innerHTML = ascii;
     };
 
@@ -64,7 +77,21 @@ function drawVideoFrame(ctx, canvas, video, container, charCols, charRows) {
     requestAnimationFrame(() => drawVideoFrame(ctx, canvas, video, container, charCols, charRows));
 }
 
-export function videoToAscii(videoUrl, container) {
+
+/**
+ * Converts an video to ASCII art and displays it in a specified container.
+ *
+ * @param {string} videoUrl - The URL of the image to convert.
+ * @param {HTMLElement} container - The HTML element where the ASCII art will be displayed.
+ * @param {Object} [options] - The optional parameters for rendering ASCII art.
+ * @param {number} [options.fontSize=8] - The font size for ASCII characters.
+ * @param {number} [options.lineHeight=14] - The line height for ASCII characters.
+ */
+export function videoToAscii(videoUrl, container,options = {
+    fontSize: 8,
+    lineHeight: 14
+}) {
+
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const video = document.createElement("video");
@@ -81,10 +108,10 @@ export function videoToAscii(videoUrl, container) {
         canvas.width = videoWidth;
         canvas.height = videoHeight;
 
-        const charCols = videoWidth / 8;
-        const charRows = videoHeight / 14;
+        const charCols = videoWidth / fontSize;
+        const charRows = videoHeight / lineHeight;
 
-        setupASCIIContainer(container, videoWidth / charCols, videoHeight / charRows);
+        setupASCIIContainer(container, fontSize, lineHeight);
         requestAnimationFrame(() => drawVideoFrame(ctx, canvas, video, container, charCols, charRows));
     };
 
